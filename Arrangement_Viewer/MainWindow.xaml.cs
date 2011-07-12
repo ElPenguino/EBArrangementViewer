@@ -30,31 +30,7 @@ namespace EarthboundArrViewer
         {
             InitializeComponent();
             curArr = -1;
-            InitializeBackgroundWorker();
         }
-        private void InitializeBackgroundWorker()
-        {
-         /*   backgroundWorker1.DoWork +=
-                new DoWorkEventHandler(backgroundWorker1_DoWork);
-            backgroundWorker1.RunWorkerCompleted +=
-                new RunWorkerCompletedEventHandler(
-            backgroundWorker1_RunWorkerCompleted);
-            backgroundWorker1.ProgressChanged +=
-                new ProgressChangedEventHandler(
-            backgroundWorker1_ProgressChanged);*/
-        }
-        /*private void backgroundWorker1_DoWork(object sender,
-            DoWorkEventArgs e)
-        {
-            // Get the BackgroundWorker that raised this event.
-            BackgroundWorker worker = sender as BackgroundWorker;
-
-            // Assign the result of the computation
-            // to the Result property of the DoWorkEventArgs
-            // object. This is will be available to the 
-            // RunWorkerCompleted eventhandler.
-            e.Result = openRom((string)e.Argument);
-        }*/
 
         private void FileOpen_Click(object sender, RoutedEventArgs e)
         {
@@ -62,7 +38,6 @@ namespace EarthboundArrViewer
             dlg.Filter = "Earthbound ROM|*.smc;*.fig;*.sfc|All Files|*.*";
             dlg.InitialDirectory = Properties.Settings.Default.lastOpenPath;
             Nullable<bool> result = dlg.ShowDialog();
-            Console.WriteLine(dlg.InitialDirectory);
             if (result == true)
             {
                 OpenROM(dlg.FileName);
@@ -76,27 +51,27 @@ namespace EarthboundArrViewer
             byte[] arrangementData, graphicsData, paletteData;
             if ((flags & 0x1) == 1)
             {
-                arrangementData = romfile.readCompressedData(arrangementOffset);
+                arrangementData = romfile.ReadCompressedData(arrangementOffset);
             }
             else
             {
-                romfile.seekToOffset(arrangementOffset);
+                romfile.SeekToOffset(arrangementOffset);
                 arrangementData = romfile.ReadBytes(2048);
             }
             if ((flags & 0x2) == 2)
             {
-                graphicsData = romfile.readCompressedData(graphicsOffset);
+                graphicsData = romfile.ReadCompressedData(graphicsOffset);
             }
             else
             {
-                romfile.seekToOffset(paletteOffset);
+                romfile.SeekToOffset(paletteOffset);
                 graphicsData = romfile.ReadBytes(8*bpp*256);
             }
             if ((flags & 0x4) == 4)
-                paletteData = romfile.readCompressedData(paletteOffset);
+                paletteData = romfile.ReadCompressedData(paletteOffset);
             else
             {
-                romfile.seekToOffset(paletteOffset);
+                romfile.SeekToOffset(paletteOffset);
                 paletteData = romfile.ReadBytes((int)Math.Pow(2, bpp + 1));
             }
             return buildArrangement(arrangementData, graphicsData, paletteData, bpp, name);
@@ -109,13 +84,13 @@ namespace EarthboundArrViewer
         private EBArrangement buildArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name)
         {
            EBArrangement temp = new EBArrangement(arrangementData, graphicsData, bpp, name);
-           temp.setPalette(paletteData);
+           temp.SetPalette(paletteData);
            return temp;
         }
 
         private Boolean CheckROMID()
         {
-            if (romfile.getGameID() == "MB  ")
+            if (romfile.GetGameID() == "MB  ")
                 return true;
             return false;
         }
@@ -131,7 +106,7 @@ namespace EarthboundArrViewer
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
             dlg.InitialDirectory = Properties.Settings.Default.lastSavePath;
             Console.WriteLine(dlg.InitialDirectory);
-            dlg.FileName = arrangements[curArr].name;
+            dlg.FileName = arrangements[curArr].Name;
             dlg.DefaultExt = ".png";
             dlg.AddExtension = true;
             dlg.Filter = "Portable Network Graphics|*.png|GIF Image|*.gif";
@@ -171,7 +146,14 @@ namespace EarthboundArrViewer
         private void ArrangementList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             curArr = ArrangementList.SelectedIndex;
-            ArrangementCanvas.Source = arrangements[curArr].getGraphic();
+            try
+            {
+                ArrangementCanvas.Source = arrangements[curArr].GetGraphic();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -198,7 +180,7 @@ namespace EarthboundArrViewer
                 return;
             }
 
-            romfile.seekToOffset(0x0ADCA1);
+            romfile.SeekToOffset(0x0ADCA1);
             byte[] tableData = romfile.ReadBytes(17 * 326);
             for (int i = 0; i < tableData.Length / 17; i++)
             {
@@ -210,7 +192,7 @@ namespace EarthboundArrViewer
                        tableData[i * 17 + 2],
                        "BattleBG " + i));
             }
-            if (romfile.getGameDest() == SNESRom.America)
+            if (romfile.GetGameDest() == SNESRom.America)
             {
                 arrangements.Add(buildArrangement(0x21AD01, 0x21AD4E, 0x21AE70, 2, "Nintendo"));
                 arrangements.Add(buildArrangement(0x21AADF, 0x21AB4B, 0x21AE70, 2, "Itoi"));
@@ -227,7 +209,7 @@ namespace EarthboundArrViewer
                 byte[] decompBuffer;
                 for (int i = 0; i < 6; i++)
                 {
-                    decompBuffer = romfile.readCompressedData(romfile.ReadSNESPointer(0x202190+i*4));
+                    decompBuffer = romfile.ReadCompressedData(romfile.ReadSNESPointer(0x202190+i*4));
                     arrangementData = new byte[2048];
                     paletteData = new byte[64];
                     graphicsData = new byte[decompBuffer.Length-2048-64];
@@ -245,20 +227,51 @@ namespace EarthboundArrViewer
                     arrangements.Add(buildArrangement(romfile.ReadSNESPointer(0xCF593+i*4), gfxOffset, 0x0CF47F+i*8, 2, "PSI " + i));
                 }*/
             }
-            if (romfile.getGameDest() == SNESRom.Japan)
+            if (romfile.GetGameDest() == SNESRom.Japan)
             {
-                //Todo: find offsets in Mother 2 ROM.
+                arrangements.Add(buildArrangement(0x21C692, 0x21C6DF, 0x21C800, 2, "Nintendo", 0x7));
+                arrangements.Add(buildArrangement(0x21C470, 0x21C4DC, 0x21C800, 2, "Itoi", 0x7));
+                arrangements.Add(buildArrangement(0x18F8D6, 0x18FAD4, 0x18F8CE, 2, "Faulty cartridge"));
+                arrangements.Add(buildArrangement(0x18F05E, 0x18F336, 0x18F8CE, 2, "Piracy is bad"));
+                arrangements.Add(buildArrangement(0x2148AB, 0x2148EF, 0x2149B8, 2, "Logo 1", 0x7));
+                arrangements.Add(buildArrangement(0x214317, 0x214380, 0x214586, 2, "Logo 2", 0x7));
+                arrangements.Add(buildArrangement(0x2145CA, 0x21463E, 0x21480E, 2, "Logo 3", 0x7));
+                arrangements.Add(buildArrangement(0x2149FC, 0x214F4E, 0x219CB9, 8, "Gas Station", 0x7));
+                arrangements.Add(buildArrangement(0x2149FC, 0x214F4E, 0x219D5F, 8, "Gas Station Alt", 0x7));
+                //arrangements.Add(buildArrangement(0x21B18C, 0x21A0A0, 0x219CB9, 8, "Title Screen", 0x7));
+                byte[] arrangementData;
+                byte[] graphicsData, paletteData;
+                byte[] decompBuffer;
+                for (int i = 0; i < 6; i++)
+                {
+                    decompBuffer = romfile.ReadCompressedData(romfile.ReadSNESPointer(0x2030E5 + i * 4));
+                    arrangementData = new byte[2048];
+                    paletteData = new byte[64];
+                    graphicsData = new byte[decompBuffer.Length - 2048 - 64];
+                    Array.Copy(decompBuffer, paletteData, 64);
+                    Array.Copy(decompBuffer, 64, arrangementData, 0, 2048);
+                    Array.Copy(decompBuffer, 2048 + 64, graphicsData, 0, graphicsData.Length);
+
+                    arrangements.Add(buildArrangement(arrangementData, graphicsData, paletteData, 4, "Map " + i));
+                }
             }
             curArr = 0;
             ComboBoxItem tmp;
             foreach (EBArrangement arr in arrangements)
             {
                 tmp = new ComboBoxItem();
-                tmp.Content = arr.name;
+                tmp.Content = arr.Name;
                 ArrangementList.Items.Add(tmp);
             }
             ArrangementList.SelectedIndex = 0;
-            ArrangementCanvas.Source = arrangements[curArr].getGraphic();
+            try
+            {
+                ArrangementCanvas.Source = arrangements[curArr].GetGraphic();
+            }
+            catch
+            {
+                MessageBox.Show("Bad tile/arrangement data!");
+            }
             ArrangementList.IsEnabled = true;
 
             romfile.Close();

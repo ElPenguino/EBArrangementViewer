@@ -21,7 +21,7 @@ namespace EarthboundArrViewer
         private short[] arrangementData, paletteData;
         private byte bitsPerPixel;
         private BitmapSource[] tiles;
-        public String name;
+        public String Name;
 
         public EBArrangement(byte[] arrangementData, byte[] graphicsData, byte bitsPerPixel, String name)
         {
@@ -30,23 +30,23 @@ namespace EarthboundArrViewer
             this.graphicsData = graphicsData;
             this.paletteData = new short[1];
             this.bitsPerPixel = bitsPerPixel;
-            this.name = name;
-            createPalette();
-            createTilePalette();
+            this.Name = name;
+            CreatePalette();
+            CreateTilePalette();
         }
-        private void createPalette() {
+        private void CreatePalette() {
             List<System.Windows.Media.Color> colors = new List<System.Windows.Media.Color>();
             for (int i = 0; i < paletteData.Length; i++)
                 colors.Add(System.Windows.Media.Color.FromRgb((byte)((paletteData[i] & 31) * 8), (byte)(((paletteData[i] >> 5) & 31) * 8), (byte)(((paletteData[i] >> 10) & 31) * 8)));
             palette = new BitmapPalette(colors);
         }
-        public void setPalette(byte[] paletteData)
+        public void SetPalette(byte[] paletteData)
         {
             this.paletteData = new short[paletteData.Length / 2];
             Buffer.BlockCopy(paletteData, 0, this.paletteData, 0, paletteData.Length);
-            createPalette();
+            CreatePalette();
         }
-        private void createTilePalette()
+        private void CreateTilePalette()
         {
             int rawStride = ((SNESTileWidth * pf.BitsPerPixel + 31) & ~31) >> 3;
             byte[] rawImage;
@@ -61,7 +61,7 @@ namespace EarthboundArrViewer
                 tiles[i] = BitmapSource.Create(8, 8, 96, 96, pf, palette, rawImage, rawStride);
             }
         }
-        public BitmapSource getGraphic()
+        public BitmapSource GetGraphic()
         {
             int rawStride = ((SNESWidth * pf.BitsPerPixel + 31) & ~31) >> 3;
             byte[] rawImage = new byte[rawStride * SNESHeight];
@@ -70,12 +70,12 @@ namespace EarthboundArrViewer
                 if (((arrangementData[tile] >> 8) & 192) == 0)
                     tiles[arrangementData[tile] & 1023].CopyPixels(rawImage, rawStride, (tile / 32) * 2048 + (tile % 32) * 8);
                 else
-                    flipBitmap(tiles[arrangementData[tile] & 1023], ((arrangementData[tile] & 0x4000) == 0x4000), ((arrangementData[tile] & 0x8000) == 0x8000)).CopyPixels(rawImage, rawStride, (tile / 32) * 2048 + (tile % 32) * 8);
+                    FlipBitmap(tiles[arrangementData[tile] & 1023], ((arrangementData[tile] & 0x4000) == 0x4000), ((arrangementData[tile] & 0x8000) == 0x8000)).CopyPixels(rawImage, rawStride, (tile / 32) * 2048 + (tile % 32) * 8);
             }
             BitmapSource output = BitmapSource.Create(SNESWidth, SNESHeight, 96, 96, pf, palette, rawImage, rawStride);
             return output;
         }
-        private static BitmapSource flipBitmap(BitmapSource flipped, bool flipX, bool flipY)
+        private static BitmapSource FlipBitmap(BitmapSource flipped, bool flipX, bool flipY)
         {
             System.Windows.Media.Transform tr = new System.Windows.Media.ScaleTransform((flipX ? -1 : 1), (flipY ? -1 : 1));
 

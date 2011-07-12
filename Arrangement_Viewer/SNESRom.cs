@@ -43,7 +43,7 @@ namespace EarthboundArrViewer
         public SNESRom(string filename):base (File.Open(filename, FileMode.Open))
         {
             HasHeader = false;
-            try { detectHeader(); }
+            try { DetectHeader(); }
             catch (Exception e) {
                 Console.WriteLine(e.Message);
             }
@@ -58,64 +58,64 @@ namespace EarthboundArrViewer
             this.BaseStream.Seek(offset+(HasHeader ? 0x200 : 0), SeekOrigin.Begin);
             return SnesToHex(this.ReadInt32());
         }
-        public byte[] readCompressedData(int offset)
+        public byte[] ReadCompressedData(int offset)
         {
             byte[] output = new byte[PKHack.Rom.GetDecompressedSize(offset + (HasHeader ? 0x200 : 0), this)];
             PKHack.Rom.Decomp(offset + (HasHeader ? 0x200 : 0), this, output);
             //Console.WriteLine("Compressed data at {0:x} is {1} bytes",offset, output.Length);
             return output;
         }
-        public void seekToOffset(int offset)
+        public void SeekToOffset(int offset)
         {
             BaseStream.Seek(offset + (HasHeader ? 0x200 : 0), SeekOrigin.Begin);
         }
-        public void seekToEBOffset(int offset)
+        public void SeekToSNESOffset(int offset)
         {
             BaseStream.Seek(SnesToHex(offset + (HasHeader ? 0x200 : 0)), SeekOrigin.Begin);
         }
-        public void detectHeaderHiROM()
+        public void DetectHeaderHiROM()
         {
             Boolean HasHeaderOld = HasHeader;
             if (this.BaseStream.Length < 0x10000)
                 throw new Exception("File too small");
-            if (checkHeader(0xFFDC))
+            if (CheckHeader(0xFFDC))
                 return;
             HasHeader = true;
-            if (checkHeader(0xFFDC))
+            if (CheckHeader(0xFFDC))
                 return;
             HasHeader = HasHeaderOld;
             throw new Exception("Not a HiROM");
         }
-        public void detectHeaderLoROM()
+        public void DetectHeaderLoROM()
         {
             Boolean HasHeaderOld = HasHeader;
             if (this.BaseStream.Length < 0x8000)
                 throw new Exception("File too small");
-            if (checkHeader(0x7FDC))
+            if (CheckHeader(0x7FDC))
                 return;
             HasHeader = true;
-            if (checkHeader(0x7FDC))
+            if (CheckHeader(0x7FDC))
                 return;
             HasHeader = HasHeaderOld;
             throw new Exception("Not a LoROM");
         }
-        public Boolean checkHeader(int offset)
+        public Boolean CheckHeader(int offset)
         {
-            seekToOffset(offset);
+            SeekToOffset(offset);
             UInt16 complement = ReadUInt16();
             UInt16 checksum   = ReadUInt16();
             return ((UInt16)~complement == checksum);
         }
-        public void detectHeader()
+        public void DetectHeader()
         {
             Boolean HiROM = true;
             Boolean LoROM = true;
-            try { detectHeaderHiROM(); }
+            try { DetectHeaderHiROM(); }
             catch (Exception)
             {
                 HiROM = false;
             }
-            try { detectHeaderLoROM(); }
+            try { DetectHeaderLoROM(); }
             catch (Exception)
             {
                 LoROM = false;
@@ -128,14 +128,14 @@ namespace EarthboundArrViewer
                 this.isHiROM = false;
         }
 
-        public string getGameID()
+        public string GetGameID()
         {
-            this.seekToOffset(0xFFB2-(isHiROM ? 0 : 0x8000));
+            this.SeekToOffset(0xFFB2-(isHiROM ? 0 : 0x8000));
             return new string(this.ReadChars(4));
         }
-        public byte getGameDest()
+        public byte GetGameDest()
         {
-            this.seekToOffset(0xFFD9 - (isHiROM ? 0 : 0x8000));
+            this.SeekToOffset(0xFFD9 - (isHiROM ? 0 : 0x8000));
             return this.ReadByte();
         }
     }
