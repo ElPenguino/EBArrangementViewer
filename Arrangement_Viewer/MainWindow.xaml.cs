@@ -24,7 +24,7 @@ namespace EarthboundArrViewer
         private SNESRom romfile;
         private List<EBArrangement> arrangements = new List<EBArrangement>();
         private int curArr;
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        //private System.ComponentModel.BackgroundWorker backgroundWorker1;
 
         public MainWindow()
         {
@@ -65,7 +65,7 @@ namespace EarthboundArrViewer
             Console.WriteLine(dlg.InitialDirectory);
             if (result == true)
             {
-                openRom(dlg.FileName);
+                OpenROM(dlg.FileName);
                 Properties.Settings.Default.lastOpenPath = dlg.FileName.Substring(0, dlg.FileName.LastIndexOf('\\'));
                 Properties.Settings.Default.Save();
             }
@@ -113,7 +113,7 @@ namespace EarthboundArrViewer
            return temp;
         }
 
-        private Boolean checkROMValidity()
+        private Boolean CheckROMID()
         {
             if (romfile.getGameID() == "MB  ")
                 return true;
@@ -179,13 +179,20 @@ namespace EarthboundArrViewer
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] droppedFilePaths = e.Data.GetData(DataFormats.FileDrop, true) as string[];
-                openRom(droppedFilePaths[0]);
+                OpenROM(droppedFilePaths[0]);
             }
         }
-        private void openRom(string filename)
+        private void OpenROM(string filename)
         {
-            romfile = new SNESRom(filename);
-            if (!checkROMValidity())
+            try
+            {
+                romfile = new SNESRom(filename);
+            }
+            catch (Exception e) 
+            {
+                MessageBox.Show(e.Message);
+            }
+            if (!CheckROMID())
             {
                 MessageBox.Show("Not an Earthbound ROM.");
                 return;
