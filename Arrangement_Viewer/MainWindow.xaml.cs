@@ -146,6 +146,8 @@ namespace EarthboundArrViewer
         private void ArrangementList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             curArr = ArrangementList.SelectedIndex;
+            if (curArr < 0)
+                return;
             try
             {
                 ArrangementCanvas.Source = arrangements[curArr].GetGraphic();
@@ -180,7 +182,7 @@ namespace EarthboundArrViewer
                 MessageBox.Show("Not an Earthbound ROM.");
                 return;
             }
-
+            arrangements.Clear();
             romfile.SeekToOffset(0x0ADCA1);
             byte[] tableData = romfile.ReadBytes(17 * 326);
             for (int i = 0; i < tableData.Length / 17; i++)
@@ -256,6 +258,7 @@ namespace EarthboundArrViewer
                     arrangements.Add(buildArrangement(arrangementData, graphicsData, paletteData, 4, "Map " + i));
                 }
             }
+            ArrangementList.Items.Clear();
             curArr = 0;
             ComboBoxItem tmp;
             foreach (EBArrangement arr in arrangements)
