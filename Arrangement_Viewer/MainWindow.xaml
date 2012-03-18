@@ -2,14 +2,18 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Earthbound Arrangement Viewer" Height="356" Width="306" SizeChanged="Window_SizeChanged" Drop="Window_Drop" AllowDrop="True">
-    <Grid>
+    <Grid Name="BGGrid">
         <Menu Height="23" HorizontalAlignment="Left" Name="menu1" VerticalAlignment="Top" Width="Auto">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open" Click="FileOpen_Click"/>
                 <MenuItem Header="_Save Image" Click="FileSave_Click" /> 
-                <MenuItem Header="_Exit" Click="ExitItem_Click"/>   
+                <MenuItem Header="_Exit" Click="ExitItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Effects" Name="EffectsMenu" Click="EffectsMenu_Click">
+                <MenuItem Header="_Black Background" Click="BlackBG_Click" IsCheckable="True"/>
             </MenuItem>
         </Menu>
+        <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas2" Width="256" />
         <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas" Width="256" />
         <ComboBox Height="23" IsEnabled="False" HorizontalAlignment="Center" Name="ArrangementList" VerticalAlignment="Bottom" Width="256" SelectionChanged="ArrangementList_SelectionChanged" />
     </Grid>

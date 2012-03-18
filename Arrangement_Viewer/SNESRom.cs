@@ -14,8 +14,8 @@ namespace EarthboundArrViewer
         public static int America = 1;
         public static int Europe = 2;
         public Boolean HasHeader;
+        public Boolean isValid = true;
         private Boolean isHiROM = true;
-        PixelFormat pf = PixelFormats.Indexed8;
 
         public static int HexToSnes(int address)
         {
@@ -45,7 +45,8 @@ namespace EarthboundArrViewer
             HasHeader = false;
             try { DetectHeader(); }
             catch (Exception e) {
-                Console.WriteLine(e.Message);
+                this.Close();
+                this.isValid = false;
             }
         }
         
@@ -60,10 +61,12 @@ namespace EarthboundArrViewer
         }
         public byte[] ReadCompressedData(int offset)
         {
-            byte[] output = new byte[PKHack.Rom.GetDecompressedSize(offset + (HasHeader ? 0x200 : 0), this)];
-            PKHack.Rom.Decomp(offset + (HasHeader ? 0x200 : 0), this, output);
-            //Console.WriteLine("Compressed data at {0:x} is {1} bytes",offset, output.Length);
-            return output;
+           byte[] output = new byte[PKHack.Rom.GetDecompressedSize(offset + (HasHeader ? 0x200 : 0), this)];
+
+           //Console.WriteLine("Compressed data at {0:x}", offset); 
+           PKHack.Rom.Decomp(offset + (HasHeader ? 0x200 : 0), this, output);
+           //return PKHack.Rom.Decomp(offset + (HasHeader ? 0x200 : 0), this); 
+           return output;
         }
         public void SeekToOffset(int offset)
         {
