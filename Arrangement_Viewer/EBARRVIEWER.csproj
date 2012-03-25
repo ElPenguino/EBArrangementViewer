@@ -142,8 +142,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="GBARom.cs" />
-    <Compile Include="WarpEffect.cs" />
+    <Compile Include="MO3Rom.cs" />
+    <Compile Include="WarpEffect.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WarpEffect.fx</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -153,9 +157,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="EBArrangement.cs" />
-    <Compile Include="EBDecomp.cs" />
-    <Compile Include="MultilayerArrangement.cs" />
-    <Compile Include="SNESRom.cs" />
+    <Compile Include="EBRom.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -185,6 +187,13 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="WarpEffect.fx">
+      <Generator>ShaderEffectGenerator</Generator>
+      <LastGenOutput>WarpEffect.cs</LastGenOutput>
+    </None>
+    <Resource Include="WarpEffect.ps">
+      <DependentUpon>WarpEffect.fx</DependentUpon>
+    </Resource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Images\" />

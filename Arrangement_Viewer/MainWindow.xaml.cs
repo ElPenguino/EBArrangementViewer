@@ -14,23 +14,20 @@ using System.Windows.Shapes;
 using System.IO;
 using System.ComponentModel;
 using System.Windows.Media.Effects;
+using System.Windows.Threading;
 
 namespace EarthboundArrViewer {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window {
-        private SNESRom romfile = null;
-        private GBARom romfile2 = null;
-        private List<MultilayerArrangement> arrangements = new List<MultilayerArrangement>();
+        private ROMFile romfile = null;
+        private MultilayerArrangement[] arrangements;
         private int curArr;
         private List<String> effectnames = new List<String>();
         private List<System.Windows.Media.Effects.Effect> effects = new List<System.Windows.Media.Effects.Effect>();
         private MenuItem checkedeffect;
-        const int ARRANGEMENT = 1;
-        const int GRAPHICS = 2;
-        const int PALETTE = 4;
-        const int ARRANGEMENTSIZE = 32 * 32 * 2;
+        private WarpEffect testshader;
         public MainWindow() {
             InitializeComponent();
             effectnames.Add("None");
@@ -39,6 +36,15 @@ namespace EarthboundArrViewer {
             effects.Add(new BlurEffect());
             effectnames.Add("Drop Shadow");
             effects.Add(new DropShadowEffect());
+            effectnames.Add("Test");
+            testshader = new WarpEffect();
+            effects.Add(testshader);
+            /*if (Directory.Exists("shaders")) {
+                foreach (String filename in Directory.GetFiles("shaders")) {
+                    effectnames.Add(System.IO.Path.GetFileNameWithoutExtension(filename));
+                    effects.Add(new WarpEffect(filename));
+                }
+            }*/
             MenuItem tempMenuItem;
             foreach (String effectname in effectnames) {
                 tempMenuItem = new MenuItem();
@@ -63,40 +69,6 @@ namespace EarthboundArrViewer {
                 Properties.Settings.Default.lastOpenPath = dlg.FileName.Substring(0, dlg.FileName.LastIndexOf('\\'));
                 Properties.Settings.Default.Save();
             }
-
-        }
-        private EBArrangement buildArrangement(int arrangementOffset, int graphicsOffset, int paletteOffset, byte bpp, String name, byte flags) {
-            byte[] arrangementData, graphicsData, paletteData;
-            if ((flags & ARRANGEMENT) == ARRANGEMENT) {
-                arrangementData = romfile.ReadCompressedData(arrangementOffset);
-            }
-            else {
-                romfile.SeekToOffset(arrangementOffset);
-                arrangementData = romfile.ReadBytes(ARRANGEMENTSIZE);
-            }
-            if ((flags & GRAPHICS) == GRAPHICS) {
-                graphicsData = romfile.ReadCompressedData(graphicsOffset);
-            }
-            else {
-                romfile.SeekToOffset(paletteOffset);
-                graphicsData = romfile.ReadBytes(8 * bpp * 256);
-            }
-            if ((flags & PALETTE) == PALETTE)
-                paletteData = romfile.ReadCompressedData(paletteOffset);
-            else {
-                romfile.SeekToOffset(paletteOffset);
-                paletteData = romfile.ReadBytes((int)Math.Pow(2, bpp + 1));
-            }
-            return buildArrangement(arrangementData, graphicsData, paletteData, bpp, name);
-        }
-        private EBArrangement buildArrangement(int arrangementOffset, int graphicsOffset, int paletteOffset, byte bpp, String name) {
-            return buildArrangement(arrangementOffset, graphicsOffset, paletteOffset, bpp, name, ARRANGEMENT + GRAPHICS);
-        }
-
-        private EBArrangement buildArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name) {
-            EBArrangement temp = new EBArrangement(arrangementData, graphicsData, bpp, name, (romfile2 != null));
-            temp.SetPalette(paletteData);
-            return temp;
         }
 
         private void ExitItem_Click(object sender, RoutedEventArgs e) {
@@ -118,7 +90,10 @@ namespace EarthboundArrViewer {
                 string filename = dlg.FileName;
                 Properties.Settings.Default.lastSavePath = dlg.FileName.Substring(0, dlg.FileName.LastIndexOf('\\'));
                 Properties.Settings.Default.Save();
-                BitmapFrame frame = BitmapFrame.Create((BitmapSource)ArrangementCanvas.Source);
+                RenderTargetBitmap bitmap = new RenderTargetBitmap(Convert.ToInt32(ArrangementCanvas.ActualWidth), Convert.ToInt32(ArrangementCanvas.ActualHeight), 72, 72, PixelFormats.Pbgra32);
+                bitmap.Render(ArrangementCanvas2);
+                bitmap.Render(ArrangementCanvas);
+                BitmapFrame frame = BitmapFrame.Create((BitmapSource)bitmap);
 
                 BitmapEncoder encoder = null;
                 if (filename.Substring(filename.Length - 3, 3) == "png") {
@@ -135,12 +110,25 @@ namespace EarthboundArrViewer {
                 saveFile.Close();
             }
         }
-
+        private void Window_Loaded(object sender, RoutedEventArgs e) {
+            DispatcherTimer dispatcherTimer = new DispatcherTimer();
+            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+            dispatcherTimer.Interval = new TimeSpan(50000);
+            dispatcherTimer.Start();
+        }
+        private void dispatcherTimer_Tick(object sender, EventArgs e) {
+            testshader.Timer += 1;
+        }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
-            ArrangementCanvas.Height = e.NewSize.Height - 100;
-            ArrangementCanvas.Width = e.NewSize.Width - 50;
-            ArrangementCanvas2.Height = e.NewSize.Height - 100;
-            ArrangementCanvas2.Width = e.NewSize.Width - 50;
+            double newsize = 0;
+            if (e.NewSize.Height - 100 > e.NewSize.Width - 50)
+                newsize = e.NewSize.Width - 50;
+            else
+                newsize = e.NewSize.Height - 100;
+            ArrangementCanvas.Height = newsize;
+            ArrangementCanvas.Width = newsize;
+            ArrangementCanvas2.Height = newsize;
+            ArrangementCanvas2.Width = newsize;
             menu1.Width = e.NewSize.Width;
             ArrangementList.Width = e.NewSize.Width - 50;
         }
@@ -160,35 +148,23 @@ namespace EarthboundArrViewer {
         }
         private void OpenROM(string filename) {
             romfile = null;
-            romfile2 = null;
             try {
-                romfile = new SNESRom(filename);
-                if (!romfile.isValid)
-                    romfile2 = new GBARom(filename);
+                romfile = new EBRom(filename);
+                if (!romfile.isSupported())
+                    romfile = new MO3Rom(filename);
             }
-            catch (Exception e) {
-                //MessageBox.Show(e.Message);
-                //return;
+            catch {
+                MessageBox.Show("Not a supported ROM.");
+                return;
             }
-            if ((romfile.isValid) && (romfile.GetGameID() == "MB  ") && (romfile.GetGameDest() == SNESRom.America)) {
-                arrangements.Clear();
-                OpenROM_Earthbound();
-            }
-            else if ((romfile.isValid) && (romfile.GetGameID() == "MB  ") && (romfile.GetGameDest() == SNESRom.Japan)) {
-                arrangements.Clear();
-                OpenROM_Mother2();
-            }
-            else if ((romfile2 != null) && (romfile2.GetGameID() == "A3UJ")) {
-                arrangements.Clear();
-                OpenROM_Mother3();
-            }
-            else {
+            if (!romfile.isSupported()) {
                 MessageBox.Show("Not a supported ROM.");
                 return;
             }
             ArrangementList.Items.Clear();
             curArr = 0;
             ComboBoxItem tmp;
+            arrangements = romfile.getArrangements();
             foreach (MultilayerArrangement arr in arrangements) {
                 tmp = new ComboBoxItem();
                 tmp.Content = arr.Name;
@@ -197,156 +173,17 @@ namespace EarthboundArrViewer {
             ArrangementList.SelectedIndex = 0;
             UpdateArrangement();
             ArrangementList.IsEnabled = true;
-
-            romfile.Close();
-            romfile.Dispose();
-        }
-        private void OpenROM_Mother2() {
-            OpenROM_SNESCommon();
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x21C692, 0x21C6DF, 0x21C800, 2, "Nintendo", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x21C470, 0x21C4DC, 0x21C800, 2, "Itoi", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x18F8D6, 0x18FAD4, 0x18F8CE, 2, "Faulty cartridge")));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x18F05E, 0x18F336, 0x18F8CE, 2, "Piracy is bad")));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x2148AB, 0x2148EF, 0x2149B8, 2, "Logo 1", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x214317, 0x214380, 0x214586, 2, "Logo 2", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x2145CA, 0x21463E, 0x21480E, 2, "Logo 3", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x2149FC, 0x214F4E, 0x219CB9, 8, "Gas Station", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x2149FC, 0x214F4E, 0x219D5F, 8, "Gas Station Alt", ARRANGEMENT + GRAPHICS + PALETTE)));
-            //arrangements.Add(buildArrangement(0x21B18C, 0x21A0A0, 0x219CB9, 8, "Title Screen", 0x7));
-            byte[] arrangementData;
-            byte[] graphicsData, paletteData;
-            byte[] decompBuffer;
-            for (int i = 0; i < 6; i++) {
-                decompBuffer = romfile.ReadCompressedData(romfile.ReadSNESPointer(0x2030E5 + i * 4));
-                arrangementData = new byte[ARRANGEMENTSIZE];
-                paletteData = new byte[64];
-                graphicsData = new byte[decompBuffer.Length - ARRANGEMENTSIZE - 64];
-                Array.Copy(decompBuffer, paletteData, 64);
-                Array.Copy(decompBuffer, 64, arrangementData, 0, ARRANGEMENTSIZE);
-                Array.Copy(decompBuffer, ARRANGEMENTSIZE + 64, graphicsData, 0, graphicsData.Length);
-
-                arrangements.Add(new MultilayerArrangement(buildArrangement(arrangementData, graphicsData, paletteData, 4, "Map " + i)));
-            }
-        }
-        private void OpenROM_Mother3() {
-            romfile2.SeekToOffset(0x01D0BC9C);
-            ushort numlayers = romfile2.ReadUInt16();
-            ushort numarrs = romfile2.ReadUInt16();
-            EBArrangement[] layers = new EBArrangement[numlayers];
-            for (int i = 0; i < numlayers; i++)
-                layers[i] = GetMO3Layer(i);
-            MultilayerArrangement temp;
-            romfile2.SeekToOffset(0x1D1EFC0);
-            ushort layer1, layer2, alpha1, alpha2;
-            for (int i = 0; i < numarrs; i++) {
-                romfile2.SeekToOffset(0x1D1EFC0 + i * 12);
-                layer1 = romfile2.ReadUInt16();
-                layer2 = romfile2.ReadUInt16();
-                alpha1 = romfile2.ReadUInt16();
-                alpha2 = romfile2.ReadUInt16();
-                temp = new MultilayerArrangement(layers[layer1], layers[layer2]);
-                temp.opacity[0] = alpha1 / 16.0;
-                temp.opacity[1] = alpha2 / 16.0;
-                arrangements.Add(temp);
-            }
-        }
-        private EBArrangement GetMO3Layer(int id) {
-            if ((id == 0) || (id > 546))
-                return buildArrangement(new byte[2048], new byte[32], new byte[16], 4, "BG 0");
-            ushort gfxid;
-            ushort arrid;
-            byte[] palette, palette2;
-            byte[] gfx, arr;
-            int tmploc, datasize;
-
-            romfile2.SeekToOffset(0x1D0BCA0 + id * 0x90);
-            gfxid = romfile2.ReadUInt16();
-            arrid = romfile2.ReadUInt16();
-            palette = romfile2.ReadBytes(32);
-            palette2 = romfile2.ReadBytes(32);
-
-            romfile2.SeekToOffset(0x1D1FB30 + arrid * 8);
-            tmploc = romfile2.ReadInt32();
-            datasize = romfile2.ReadInt16();
-            romfile2.SeekToOffset(0x1D1FB28 + tmploc);
-            if (datasize != 2048)
-                throw new Exception("Wait, what?");
-            arr = romfile2.ReadBytes(datasize);
-
-            romfile2.SeekToOffset(0x1D1FB30 + gfxid * 8);
-            tmploc = romfile2.ReadInt32();
-            datasize = romfile2.ReadInt16();
-            romfile2.SeekToOffset(0x1D1FB28 + tmploc);
-            gfx = romfile2.ReadBytes(datasize);
-
-            return buildArrangement(arr, gfx, palette, 4, "BG " + id);
-        }
-        private void printarrangement(byte[] arr) {
-           int i = 0;
-           foreach (byte b in arr) {
-               if ((i++ % 32) == 0)
-                   Console.WriteLine();
-               Console.Write("{0:X} ", b);
-           }
-        }
-        private void OpenROM_Earthbound() {
-            OpenROM_SNESCommon();
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x21AD01, 0x21AD4E, 0x21AE70, 2, "Nintendo")));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x21AADF, 0x21AB4B, 0x21AE70, 2, "Itoi")));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x18F3C6, 0x18F5C4, 0x18F3BE, 2, "Faulty cartridge")));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x18F05E, 0x18F20D, 0x18F3BE, 2, "Piracy is bad")));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x215455, 0x21549E, 0x21558F, 2, "Logo 1", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x214EC1, 0x214F2A, 0x215130, 2, "Logo 2", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x215174, 0x2151E8, 0x2153B8, 2, "Logo 3", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x2155D3, 0x215B33, 0x21A9B7, 8, "Gas Station", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x2155D3, 0x215B33, 0x21AA5D, 8, "Gas Station Alt", ARRANGEMENT + GRAPHICS + PALETTE)));
-            arrangements.Add(new MultilayerArrangement(buildArrangement(0x21AF7D, 0x21B211, 0x21CDE1, 8, "Title Screen", ARRANGEMENT + GRAPHICS + PALETTE)));
-            byte[] arrangementData;
-            byte[] graphicsData, paletteData;
-            byte[] decompBuffer;
-            for (int i = 0; i < 6; i++) {
-                decompBuffer = romfile.ReadCompressedData(romfile.ReadSNESPointer(0x202190 + i * 4));
-                arrangementData = new byte[ARRANGEMENTSIZE];
-                paletteData = new byte[64];
-                graphicsData = new byte[decompBuffer.Length - ARRANGEMENTSIZE - 64];
-                Array.Copy(decompBuffer, paletteData, 64);
-                Array.Copy(decompBuffer, 64, arrangementData, 0, ARRANGEMENTSIZE);
-                Array.Copy(decompBuffer, ARRANGEMENTSIZE + 64, graphicsData, 0, graphicsData.Length);
-
-                arrangements.Add(new MultilayerArrangement(buildArrangement(arrangementData, graphicsData, paletteData, 4, "Map " + i)));
-            }
-            //int gfxOffset;
-            //for (int i = 0; i < 31; i++)
-            //{
-            //    romfile.seekToOffset(0xCF04D+i*12);
-            //    gfxOffset = romfile.ReadUInt16()+0xC0000;
-            //    arrangements.Add(buildArrangement(romfile.ReadSNESPointer(0xCF593+i*4), gfxOffset, 0x0CF47F+i*8, 2, "PSI " + i));
-            //}
-        }
-
-        private void OpenROM_SNESCommon() {
-            romfile.SeekToOffset(0x0ADCA1);
-            byte[] tableData = romfile.ReadBytes(17 * 327);
-            List<EBArrangement> bglayers = new List<EBArrangement>();
-            for (int i = 0; i < tableData.Length / 17; i++) {
-                bglayers.Add(buildArrangement(
-                       romfile.ReadSNESPointer(0xAD93D + tableData[i * 17] * 4),
-                       romfile.ReadSNESPointer(0xAD7A1 + tableData[i * 17] * 4),
-                       romfile.ReadSNESPointer(0xADAD9 + tableData[i * 17 + 1] * 4),
-                       tableData[i * 17 + 2],
-                       "BattleBG " + i));
-            }
-            romfile.SeekToOffset(0x0BD89A);
-            for (int i = 0; i < 0x1E3; i++)
-                arrangements.Add(new MultilayerArrangement(bglayers[romfile.ReadInt16()], bglayers[romfile.ReadInt16()]));
         }
         private void UpdateArrangement() {
-            if (arrangements.Count > 0) {
+            if (arrangements.Length > 0) {
                 try {
                     ArrangementCanvas.Source = arrangements[curArr].GetLayer(0);
                     ArrangementCanvas.Opacity = arrangements[curArr].opacity[0];
-                    ArrangementCanvas2.Source = arrangements[curArr].GetLayer(1);
-                    ArrangementCanvas2.Opacity = arrangements[curArr].opacity[1];
+                        ArrangementCanvas2.Source = arrangements[curArr].GetLayer(1);
+                    if (arrangements[curArr].numlayers == 2)
+                        ArrangementCanvas2.Opacity = arrangements[curArr].opacity[1];
+                    else
+                        ArrangementCanvas2.Opacity = 1;
                 }
                 catch (Exception e) {
                     Console.WriteLine(e.Message);

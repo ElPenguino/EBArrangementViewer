@@ -151,4 +151,42 @@ namespace EarthboundArrViewer
             return transformedBmp;
         }
     }
+    class MultilayerArrangement {
+        private EBArrangement[] layers;
+        public int numlayers;
+        public String Name;
+        public double[] opacity;
+        private BitmapSource[] bitmaps;
+        public MultilayerArrangement(EBArrangement layer1, EBArrangement layer2) {
+            numlayers = 2;
+            layers = new EBArrangement[numlayers];
+            opacity = new double[numlayers];
+            layers[0] = layer1;
+            layers[1] = layer2;
+            opacity[0] = 1;
+            opacity[1] = 1;
+            this.Name = layer1.Name + " + " + layer2.Name;
+        }
+        public MultilayerArrangement(EBArrangement layer1) {
+            numlayers = 1;
+            layers = new EBArrangement[numlayers];
+            layers[0] = layer1;
+            opacity = new double[numlayers];
+            opacity[0] = 1;
+            this.Name = layer1.Name;
+        }
+        public BitmapSource GetLayer(int id) {
+            if (id >= numlayers)
+                return null;
+            if (bitmaps == null) {
+                bitmaps = new BitmapSource[numlayers];
+                for (int i = 0; i < numlayers; i++) {
+                    bitmaps[i] = layers[i].getGraphic();
+                    layers[i] = null;
+                }
+            }
+            return bitmaps[id];
+            //return layers[id].getTileDump();
+        }
+    }
 }
