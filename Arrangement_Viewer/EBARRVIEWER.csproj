@@ -156,7 +156,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="EBArrangement.cs" />
+    <Compile Include="Arrangement.cs" />
     <Compile Include="EBRom.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

@@ -84,7 +84,7 @@ namespace EarthboundArrViewer
             ushort numlayers = this.ReadUInt16();
             ushort numarrs = this.ReadUInt16();
             output = new MultilayerArrangement[numarrs];
-            EBArrangement[] layers = new EBArrangement[numlayers];
+            Arrangement[] layers = new Arrangement[numlayers];
             for (int i = 0; i < numlayers; i++)
                 layers[i] = GetMO3Layer(i);
             MultilayerArrangement temp;
@@ -101,13 +101,12 @@ namespace EarthboundArrViewer
                 temp.opacity[1] = alpha2 / 16.0;
                 output[i] = temp;
             }
-            layers = null;
             Console.WriteLine("Read {0} arrangements", output.Length);
             this.Close();
             this.Dispose();
             return output;
         }
-        private EBArrangement GetMO3Layer(int id) {
+        private Arrangement GetMO3Layer(int id) {
             if ((id == 0) || (id > 546))
                 return buildArrangement(new byte[2048], new byte[32], new byte[16], 4, "BG 0");
             ushort gfxid;
@@ -138,10 +137,8 @@ namespace EarthboundArrViewer
 
             return buildArrangement(arr, gfx, palette, 4, "BG " + id);
         }
-        private EBArrangement buildArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name) {
-            EBArrangement temp = new EBArrangement(arrangementData, graphicsData, bpp, name, true);
-            temp.SetPalette(paletteData);
-            return temp;
+        private Arrangement buildArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name) {
+            return new Arrangement(arrangementData, graphicsData, paletteData, bpp, name, true);
         }
     }
 }

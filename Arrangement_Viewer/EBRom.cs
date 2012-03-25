@@ -413,7 +413,7 @@ namespace EarthboundArrViewer
             int i;
             this.SeekToOffset(0x0ADCA1);
             byte[] tableData = this.ReadBytes(17 * 327);
-            List<EBArrangement> bglayers = new List<EBArrangement>();
+            List<Arrangement> bglayers = new List<Arrangement>();
             for (i = 0; i < tableData.Length / 17; i++) {
                 bglayers.Add(ReadCompressedArrangement(
                        this.ReadSNESPointer(0xAD93D + tableData[i * 17] * 4),
@@ -426,6 +426,7 @@ namespace EarthboundArrViewer
             this.SeekToOffset(0x0BD89A);
             for (i = 0; i < 0x1E3; i++)
                 arrangements[i] = new MultilayerArrangement(bglayers[this.ReadInt16()], bglayers[this.ReadInt16()]);
+            bglayers.Clear();
             i = 0x1E3;
             if (this.GetGameDest() == Japan) {
                 arrangements[i++] = new MultilayerArrangement(ReadCompressedArrangement(0x21C692, 0x21C6DF, 0x21C800, 2, "Nintendo", ARRANGEMENT + GRAPHICS + PALETTE));
@@ -491,7 +492,7 @@ namespace EarthboundArrViewer
             this.Dispose();
             return arrangements;
         }
-        public EBArrangement ReadCompressedArrangement(int arrangementOffset, int graphicsOffset, int paletteOffset, byte bpp, String name, byte flags) {
+        public Arrangement ReadCompressedArrangement(int arrangementOffset, int graphicsOffset, int paletteOffset, byte bpp, String name, byte flags) {
             byte[] arrangementData, graphicsData, paletteData;
             if ((flags & ARRANGEMENT) == ARRANGEMENT) {
                 arrangementData = this.ReadCompressedData(arrangementOffset);
@@ -513,14 +514,10 @@ namespace EarthboundArrViewer
                 this.SeekToOffset(paletteOffset);
                 paletteData = this.ReadBytes((int)Math.Pow(2, bpp + 1));
             }
-            EBArrangement temp = new EBArrangement(arrangementData, graphicsData, bpp, name, false);
-            temp.SetPalette(paletteData);
-            return temp;
+            return new Arrangement(arrangementData, graphicsData, paletteData, bpp, name, false);
         }
-        private EBArrangement ReadMapArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name) {
-            EBArrangement temp = new EBArrangement(arrangementData, graphicsData, bpp, name, false);
-            temp.SetPalette(paletteData);
-            return temp;
+        private Arrangement ReadMapArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name) {
+            return new Arrangement(arrangementData, graphicsData,paletteData, bpp, name, false);
         }
     }
 }

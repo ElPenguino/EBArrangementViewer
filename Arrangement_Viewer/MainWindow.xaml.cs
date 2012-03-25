@@ -23,40 +23,11 @@ namespace EarthboundArrViewer {
     public partial class MainWindow : Window {
         private ROMFile romfile = null;
         private MultilayerArrangement[] arrangements;
-        private int curArr;
-        private List<String> effectnames = new List<String>();
-        private List<System.Windows.Media.Effects.Effect> effects = new List<System.Windows.Media.Effects.Effect>();
-        private MenuItem checkedeffect;
-        private WarpEffect testshader;
+        private int curArr = -1;
+        private WarpEffect battlebgshader1;
+        private WarpEffect battlebgshader2;
         public MainWindow() {
             InitializeComponent();
-            effectnames.Add("None");
-            effects.Add(null);
-            effectnames.Add("Blur");
-            effects.Add(new BlurEffect());
-            effectnames.Add("Drop Shadow");
-            effects.Add(new DropShadowEffect());
-            effectnames.Add("Test");
-            testshader = new WarpEffect();
-            effects.Add(testshader);
-            /*if (Directory.Exists("shaders")) {
-                foreach (String filename in Directory.GetFiles("shaders")) {
-                    effectnames.Add(System.IO.Path.GetFileNameWithoutExtension(filename));
-                    effects.Add(new WarpEffect(filename));
-                }
-            }*/
-            MenuItem tempMenuItem;
-            foreach (String effectname in effectnames) {
-                tempMenuItem = new MenuItem();
-                tempMenuItem.Header = effectname;
-                tempMenuItem.IsCheckable = true;
-                if (effectname == "None") {
-                    checkedeffect = tempMenuItem;
-                    tempMenuItem.IsChecked = true;
-                }
-                EffectsMenu.Items.Add(tempMenuItem);
-            }
-            curArr = -1;
         }
 
         private void FileOpen_Click(object sender, RoutedEventArgs e) {
@@ -115,9 +86,25 @@ namespace EarthboundArrViewer {
             dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
             dispatcherTimer.Interval = new TimeSpan(50000);
             dispatcherTimer.Start();
+            battlebgshader1 = new WarpEffect();
+            battlebgshader2 = new WarpEffect();
+            ArrangementCanvas.Effect = battlebgshader1;
+            ArrangementCanvas2.Effect = battlebgshader2;
+        }
+        private void Anim_Click(object sender, RoutedEventArgs e) {
+            if (((MenuItem)sender).IsChecked) {
+                ArrangementCanvas.Effect = battlebgshader1;
+                ArrangementCanvas2.Effect = battlebgshader2;
+            }
+            else {
+                ArrangementCanvas.Effect = null;
+                ArrangementCanvas2.Effect = null;
+            }
+
         }
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
-            testshader.Timer += 1;
+            battlebgshader1.Timer += 1;
+            battlebgshader2.Timer -= 1;
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
             double newsize = 0;
@@ -190,21 +177,6 @@ namespace EarthboundArrViewer {
                     MessageBox.Show("Bad tile/arrangement data!");
                 }
             }
-        }
-        private void EffectsMenu_Click(object sender, RoutedEventArgs e) {
-            int i = 0;
-            foreach (String effect in effectnames) {
-                if (effect == (string)((MenuItem)e.OriginalSource).Header)
-                    break;
-                i++;
-            }
-            if (i >= effectnames.Count)
-                return;
-            checkedeffect.IsChecked = false;
-            checkedeffect = (MenuItem)e.OriginalSource;
-            ((MenuItem)e.OriginalSource).IsChecked = true;
-            ArrangementCanvas.Effect = effects[i];
-            ArrangementCanvas2.Effect = effects[i];
         }
         private void BlackBG_Click(object sender, RoutedEventArgs e) {
             if (((MenuItem)e.OriginalSource).IsChecked)

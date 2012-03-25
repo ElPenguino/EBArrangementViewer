@@ -9,8 +9,9 @@
                 <MenuItem Header="_Save Image" Click="FileSave_Click" /> 
                 <MenuItem Header="_Exit" Click="ExitItem_Click"/>
             </MenuItem>
-            <MenuItem Header="_Effects" Name="EffectsMenu" Click="EffectsMenu_Click">
+            <MenuItem Header="_Effects" Name="EffectsMenu">
                 <MenuItem Header="_Black Background" Click="BlackBG_Click" IsCheckable="True"/>
+                <MenuItem Header="_Animation" Click="Anim_Click" IsCheckable="True" IsChecked="True"/>
             </MenuItem>
         </Menu>
         <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas2" Width="256" />

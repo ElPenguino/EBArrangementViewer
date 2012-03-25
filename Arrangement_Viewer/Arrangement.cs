@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace EarthboundArrViewer
 {
-    class EBArrangement {
+    class Arrangement {
         const int SNESWidth = 256;
         const int SNESHeight = 256;
         const int SNESTileWidth = 8;
@@ -27,29 +27,20 @@ namespace EarthboundArrViewer
         private BitmapSource[] tiles;
         public String Name;
         public Boolean GBA = false;
-        public EBArrangement(byte[] arrangementData, byte[] graphicsData, byte bitsPerPixel, String name, Boolean GBA)
+        public Arrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bitsPerPixel, String name, Boolean GBA)
         {
             this.arrangementData = new ushort[arrangementData.Length/2+1];
             Buffer.BlockCopy(arrangementData, 0, this.arrangementData, 0, arrangementData.Length);
             this.graphicsData = graphicsData;
-            this.paletteData = new ushort[1];
             this.bitsPerPixel = bitsPerPixel;
             this.Name = name;
             this.GBA = GBA;
-            CreatePalette();
-            CreateTilePalette();
-        }
-        private void CreatePalette() {
-            List<System.Windows.Media.Color> colors = new List<System.Windows.Media.Color>();
-            for (int i = 0; i < paletteData.Length; i++)
-                colors.Add(System.Windows.Media.Color.FromArgb((byte)((i == 0) ? 0 : 255), (byte)((paletteData[i] & 31) << 3), (byte)((paletteData[i] & 0x3E0) >> 2), (byte)((paletteData[i] & 0x7C00) >> 7)));
-            palette = new BitmapPalette(colors);
-        }
-        public void SetPalette(byte[] paletteData)
-        {
             this.paletteData = new ushort[paletteData.Length / 2];
             Buffer.BlockCopy(paletteData, 0, this.paletteData, 0, paletteData.Length);
-            CreatePalette();
+            List<System.Windows.Media.Color> colors = new List<System.Windows.Media.Color>();
+            for (int i = 0; i < this.paletteData.Length; i++)
+                colors.Add(System.Windows.Media.Color.FromArgb((byte)((i == 0) ? 0 : 255), (byte)((this.paletteData[i] & 31) << 3), (byte)((this.paletteData[i] & 0x3E0) >> 2), (byte)((this.paletteData[i] & 0x7C00) >> 7)));
+            palette = new BitmapPalette(colors);
         }
         private void CreateTilePalette()
         {
@@ -98,6 +89,7 @@ namespace EarthboundArrViewer
             return output;
         }
         public BitmapSource getGraphic() {
+            CreateTilePalette();
             if (GBA)
                 return GetGraphicGBA();
             return GetGraphicSNES();
@@ -152,14 +144,14 @@ namespace EarthboundArrViewer
         }
     }
     class MultilayerArrangement {
-        private EBArrangement[] layers;
+        private Arrangement[] layers;
         public int numlayers;
         public String Name;
         public double[] opacity;
         private BitmapSource[] bitmaps;
-        public MultilayerArrangement(EBArrangement layer1, EBArrangement layer2) {
+        public MultilayerArrangement(Arrangement layer1, Arrangement layer2) {
             numlayers = 2;
-            layers = new EBArrangement[numlayers];
+            layers = new Arrangement[numlayers];
             opacity = new double[numlayers];
             layers[0] = layer1;
             layers[1] = layer2;
@@ -167,9 +159,9 @@ namespace EarthboundArrViewer
             opacity[1] = 1;
             this.Name = layer1.Name + " + " + layer2.Name;
         }
-        public MultilayerArrangement(EBArrangement layer1) {
+        public MultilayerArrangement(Arrangement layer1) {
             numlayers = 1;
-            layers = new EBArrangement[numlayers];
+            layers = new Arrangement[numlayers];
             layers[0] = layer1;
             opacity = new double[numlayers];
             opacity[0] = 1;

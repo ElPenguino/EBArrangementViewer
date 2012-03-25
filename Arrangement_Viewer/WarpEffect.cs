@@ -24,15 +24,19 @@ namespace EarthboundArrViewer
         /// <summary>Time.</summary>
         public static readonly DependencyProperty TimerProperty = DependencyProperty.Register("Timer", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(0)));
         /// <summary>Horizontal Amplitude.</summary>
-        public static readonly DependencyProperty HamplitudeProperty = DependencyProperty.Register("Hamplitude", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0.1, PixelShaderConstantCallback(1)));
+        public static readonly DependencyProperty HamplitudeProperty = DependencyProperty.Register("Hamplitude", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(1)));
         /// <summary>Horizontal Period.</summary>
-        public static readonly DependencyProperty HperiodProperty = DependencyProperty.Register("Hperiod", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)20, PixelShaderConstantCallback(2)));
+        public static readonly DependencyProperty HperiodProperty = DependencyProperty.Register("Hperiod", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(2)));
         /// <summary>Vertical Amplitude.</summary>
-        public static readonly DependencyProperty VamplitudeProperty = DependencyProperty.Register("Vamplitude", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0.1, PixelShaderConstantCallback(3)));
+        public static readonly DependencyProperty VamplitudeProperty = DependencyProperty.Register("Vamplitude", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(3)));
         /// <summary>Vertical Period.</summary>
         public static readonly DependencyProperty VperiodProperty = DependencyProperty.Register("Vperiod", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(4)));
-        /// <summary>Time.</summary>
+        /// <summary>Time divisor.</summary>
         public static readonly DependencyProperty TimerdividerProperty = DependencyProperty.Register("Timerdivider", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)200, PixelShaderConstantCallback(5)));
+        /// <summary>Horizontal Drift.</summary>
+        public static readonly DependencyProperty HdriftProperty = DependencyProperty.Register("Hdrift", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(6)));
+        /// <summary>Vertical Drift.</summary>
+        public static readonly DependencyProperty VdriftProperty = DependencyProperty.Register("Vdrift", typeof(System.Double), typeof(WarpEffect), new PropertyMetadata((double)0, PixelShaderConstantCallback(7)));
         /// <summary>The implicit input sampler passed into the pixel shader by WPF.</summary>
         public static readonly DependencyProperty InputProperty = ShaderEffect.RegisterPixelShaderSamplerProperty("Input", typeof(WarpEffect), 0, SamplingMode.Auto);
         
@@ -47,6 +51,8 @@ namespace EarthboundArrViewer
             this.UpdateShaderValue(VamplitudeProperty);
             this.UpdateShaderValue(VperiodProperty);
             this.UpdateShaderValue(TimerdividerProperty);
+            this.UpdateShaderValue(HdriftProperty);
+            this.UpdateShaderValue(VdriftProperty);
             this.UpdateShaderValue(InputProperty);
             this.DdxUvDdyUvRegisterIndex = -1;
         }
@@ -116,7 +122,7 @@ namespace EarthboundArrViewer
             }
         }
         
-        /// <summary>Time.</summary>
+        /// <summary>Time divisor.</summary>
         public virtual double Timerdivider
         {
             get
@@ -126,6 +132,32 @@ namespace EarthboundArrViewer
             set
             {
                 this.SetValue(TimerdividerProperty, value);
+            }
+        }
+        
+        /// <summary>Horizontal Drift.</summary>
+        public virtual double Hdrift
+        {
+            get
+            {
+                return ((double)(this.GetValue(HdriftProperty)));
+            }
+            set
+            {
+                this.SetValue(HdriftProperty, value);
+            }
+        }
+        
+        /// <summary>Vertical Drift.</summary>
+        public virtual double Vdrift
+        {
+            get
+            {
+                return ((double)(this.GetValue(VdriftProperty)));
+            }
+            set
+            {
+                this.SetValue(VdriftProperty, value);
             }
         }
         
