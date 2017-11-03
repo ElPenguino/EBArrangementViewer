@@ -14,8 +14,8 @@
                 <MenuItem Header="_Animation" Click="Anim_Click" IsCheckable="True" IsChecked="True"/>
             </MenuItem>
         </Menu>
-        <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas2" Width="256" />
-        <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas" Width="256" />
+        <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas2" Width="256" Stretch="Uniform" />
+        <Image Height="256" VerticalAlignment="Center" HorizontalAlignment="Center" Name="ArrangementCanvas" Width="256" Stretch="Uniform" />
         <ComboBox Height="23" IsEnabled="False" HorizontalAlignment="Center" Name="ArrangementList" VerticalAlignment="Bottom" Width="256" SelectionChanged="ArrangementList_SelectionChanged" />
     </Grid>
 </Window>

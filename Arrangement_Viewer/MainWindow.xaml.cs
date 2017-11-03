@@ -61,7 +61,7 @@ namespace EarthboundArrViewer {
                 string filename = dlg.FileName;
                 Properties.Settings.Default.lastSavePath = dlg.FileName.Substring(0, dlg.FileName.LastIndexOf('\\'));
                 Properties.Settings.Default.Save();
-                RenderTargetBitmap bitmap = new RenderTargetBitmap(Convert.ToInt32(ArrangementCanvas.ActualWidth), Convert.ToInt32(ArrangementCanvas.ActualHeight), 72, 72, PixelFormats.Pbgra32);
+                RenderTargetBitmap bitmap = new RenderTargetBitmap(Convert.ToInt32(ArrangementCanvas.Width), Convert.ToInt32(ArrangementCanvas.Height), 72, 72, PixelFormats.Pbgra32);
                 bitmap.Render(ArrangementCanvas2);
                 bitmap.Render(ArrangementCanvas);
                 BitmapFrame frame = BitmapFrame.Create((BitmapSource)bitmap);
@@ -164,9 +164,10 @@ namespace EarthboundArrViewer {
         private void UpdateArrangement() {
             if (arrangements.Length > 0) {
                 try {
-                    ArrangementCanvas.Source = arrangements[curArr].GetLayer(0);
+                    ArrangementCanvas.Source = arrangements[curArr].GetBitmap(0);
                     ArrangementCanvas.Opacity = arrangements[curArr].opacity[0];
-                        ArrangementCanvas2.Source = arrangements[curArr].GetLayer(1);
+                    ArrangementCanvas2.Source = arrangements[curArr].GetBitmap(1);
+
                     if (arrangements[curArr].numlayers == 2)
                         ArrangementCanvas2.Opacity = arrangements[curArr].opacity[1];
                     else
@@ -175,6 +176,28 @@ namespace EarthboundArrViewer {
                 catch (Exception e) {
                     Console.WriteLine(e.Message);
                     MessageBox.Show("Bad tile/arrangement data!");
+                }
+                if (arrangements[curArr].numlayers > 0)
+                {
+                    battlebgshader1.Hdrift = arrangements[curArr].GetLayer(0).hdrift;
+                    battlebgshader1.Hamplitude = arrangements[curArr].GetLayer(0).hamplitude;
+                    battlebgshader1.Hfrequency = arrangements[curArr].GetLayer(0).hfrequency;
+                    battlebgshader1.Hperiod = arrangements[curArr].GetLayer(0).hperiod;
+                    battlebgshader1.Vdrift = arrangements[curArr].GetLayer(0).vdrift;
+                    battlebgshader1.Vamplitude = arrangements[curArr].GetLayer(0).vamplitude;
+                    battlebgshader1.Vfrequency = arrangements[curArr].GetLayer(0).vfrequency;
+                    battlebgshader1.Vperiod = arrangements[curArr].GetLayer(0).vperiod;
+                    if (arrangements[curArr].numlayers > 1)
+                    {
+                        battlebgshader2.Hdrift = arrangements[curArr].GetLayer(1).hdrift;
+                        battlebgshader2.Hamplitude = arrangements[curArr].GetLayer(1).hamplitude;
+                        battlebgshader2.Hfrequency = arrangements[curArr].GetLayer(1).hfrequency;
+                        battlebgshader2.Hperiod = arrangements[curArr].GetLayer(1).hperiod;
+                        battlebgshader2.Vdrift = arrangements[curArr].GetLayer(1).vdrift;
+                        battlebgshader2.Vamplitude = arrangements[curArr].GetLayer(1).vamplitude;
+                        battlebgshader2.Vfrequency = arrangements[curArr].GetLayer(1).vfrequency;
+                        battlebgshader2.Vperiod = arrangements[curArr].GetLayer(1).vperiod;
+                    }
                 }
             }
         }

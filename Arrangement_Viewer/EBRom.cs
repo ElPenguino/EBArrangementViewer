@@ -74,9 +74,10 @@ namespace EarthboundArrViewer
         }
         public byte[] ReadCompressedData(int offset)
         {
-           byte[] output = new byte[GetDecompressedSize(offset + (HasHeader ? 0x200 : 0), this)];
+            int compsize = 0;
+           byte[] output = new byte[GetDecompressedSize(offset + (HasHeader ? 0x200 : 0), this, ref compsize)];
 
-           //Console.WriteLine("Compressed data at {0:x}", offset); 
+           Console.WriteLine("Compressed data at {0:x}, size {1}->{2}", offset, compsize, output.Length); 
            Decomp(offset + (HasHeader ? 0x200 : 0), this, output);
            //return PKHack.Rom.Decomp(offset + (HasHeader ? 0x200 : 0), this); 
            return output;
@@ -334,7 +335,7 @@ namespace EarthboundArrViewer
             return bpos;
         }
 
-        public static int GetDecompressedSize(int start, BinaryReader stream) {
+        public static int GetDecompressedSize(int start, BinaryReader stream, ref int compsize) {
             int bpos = 0, bpos2 = 0;
             byte tmp;
             stream.BaseStream.Seek(start, SeekOrigin.Begin);
@@ -406,6 +407,7 @@ namespace EarthboundArrViewer
                 }
                 tmp = stream.ReadByte();
             }
+            compsize = (int)stream.BaseStream.Position - start;
             return bpos;
         }
         public MultilayerArrangement[] getArrangements() {

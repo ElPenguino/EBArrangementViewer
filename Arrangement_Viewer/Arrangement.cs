@@ -22,24 +22,35 @@ namespace EarthboundArrViewer
         private PixelFormat pf = PixelFormats.Indexed8;
         private BitmapPalette palette;
         private byte[] graphicsData;
-        private ushort[] arrangementData, paletteData;
+        private ushort[] arrangementData;
         private byte bitsPerPixel;
         private BitmapSource[] tiles;
         public String Name;
         public Boolean GBA = false;
+        public double hdrift { get; set; }
+        public double vdrift { get; set; }
+        public double hamplitude { get; set; }
+        public double vamplitude { get; set; }
+        public double hfrequency { get; set; }
+        public double vfrequency { get; set; }
+        public double hperiod { get; set; }
+        public double vperiod { get; set; }
         public Arrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bitsPerPixel, String name, Boolean GBA)
         {
-            this.arrangementData = new ushort[arrangementData.Length/2+1];
+            if (arrangementData.Length != 2048)
+                this.arrangementData = new ushort[1024];
+            else
+                this.arrangementData = new ushort[arrangementData.Length/2+1];
             Buffer.BlockCopy(arrangementData, 0, this.arrangementData, 0, arrangementData.Length);
             this.graphicsData = graphicsData;
             this.bitsPerPixel = bitsPerPixel;
             this.Name = name;
             this.GBA = GBA;
-            this.paletteData = new ushort[paletteData.Length / 2];
-            Buffer.BlockCopy(paletteData, 0, this.paletteData, 0, paletteData.Length);
+            ushort[] tempPaletteData = new ushort[paletteData.Length / 2];
+            Buffer.BlockCopy(paletteData, 0, tempPaletteData, 0, paletteData.Length);
             List<System.Windows.Media.Color> colors = new List<System.Windows.Media.Color>();
-            for (int i = 0; i < this.paletteData.Length; i++)
-                colors.Add(System.Windows.Media.Color.FromArgb((byte)((i == 0) ? 0 : 255), (byte)((this.paletteData[i] & 31) << 3), (byte)((this.paletteData[i] & 0x3E0) >> 2), (byte)((this.paletteData[i] & 0x7C00) >> 7)));
+            for (int i = 0; i < tempPaletteData.Length; i++)
+                colors.Add(System.Windows.Media.Color.FromArgb((byte)((i == 0) ? 0 : 255), (byte)((tempPaletteData[i] & 31) << 3), (byte)((tempPaletteData[i] & 0x3E0) >> 2), (byte)((tempPaletteData[i] & 0x7C00) >> 7)));
             palette = new BitmapPalette(colors);
         }
         private void CreateTilePalette()
@@ -119,7 +130,6 @@ namespace EarthboundArrViewer
             byte[] rawImage = new byte[rawStride * GBAHeight];
             int tileid;
             for (int tile = 0; tile < 32 * 32; tile++) {
-                //Console.WriteLine(arrangementData[tile]);
                 tileid = arrangementData[tile] & 1023;
                 if (tileid >= tiles.Length)
                     tileid = 0;
@@ -167,18 +177,22 @@ namespace EarthboundArrViewer
             opacity[0] = 1;
             this.Name = layer1.Name;
         }
-        public BitmapSource GetLayer(int id) {
+        public BitmapSource GetBitmap(int id) {
             if (id >= numlayers)
                 return null;
             if (bitmaps == null) {
                 bitmaps = new BitmapSource[numlayers];
                 for (int i = 0; i < numlayers; i++) {
                     bitmaps[i] = layers[i].getGraphic();
-                    layers[i] = null;
                 }
             }
             return bitmaps[id];
-            //return layers[id].getTileDump();
+        }
+        public Arrangement GetLayer(int id)
+        {
+            if (id >= numlayers)
+                return null;
+            return layers[id];
         }
     }
 }

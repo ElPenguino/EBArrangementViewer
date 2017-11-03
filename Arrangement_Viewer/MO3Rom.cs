@@ -46,7 +46,7 @@ namespace EarthboundArrViewer
             if (this.GetGameID() == "A3UJ")
                 this.isMother3 = true;
         }
-        
+
         public int ReadGBAPointer(int offset) {
             if (offset > this.BaseStream.Length)
             {
@@ -120,13 +120,12 @@ namespace EarthboundArrViewer
             arrid = this.ReadUInt16();
             palette = this.ReadBytes(32);
             palette2 = this.ReadBytes(32);
-
             this.SeekToOffset(0x1D1FB30 + arrid * 8);
             tmploc = this.ReadInt32();
             datasize = this.ReadInt16();
             this.SeekToOffset(0x1D1FB28 + tmploc);
             if (datasize != 2048)
-                throw new Exception("Wait, what?");
+                throw new Exception("Arrangement size != 2048");
             arr = this.ReadBytes(datasize);
 
             this.SeekToOffset(0x1D1FB30 + gfxid * 8);
@@ -135,7 +134,19 @@ namespace EarthboundArrViewer
             this.SeekToOffset(0x1D1FB28 + tmploc);
             gfx = this.ReadBytes(datasize);
 
-            return buildArrangement(arr, gfx, palette, 4, "BG " + id);
+            Arrangement output = buildArrangement(arr, gfx, palette, 4, "BG " + id);
+            this.SeekToOffset(0x1D0BCA0 + id * 0x90 + 116);
+            output.hdrift = this.ReadInt16();
+            output.vdrift = this.ReadInt16();
+            this.ReadInt32();
+            output.hamplitude = (double)this.ReadInt16() / 256.0;
+            output.vamplitude = (double)this.ReadInt16() / 256.0;
+            output.hperiod = (double)this.ReadInt16() / 256.0;
+            output.vperiod = (double)this.ReadInt16() / 256.0;
+            output.hfrequency = (double)this.ReadInt16() / 256.0;
+            output.vfrequency = (double)this.ReadInt16() / 256.0;
+
+            return output;
         }
         private Arrangement buildArrangement(byte[] arrangementData, byte[] graphicsData, byte[] paletteData, byte bpp, String name) {
             return new Arrangement(arrangementData, graphicsData, paletteData, bpp, name, true);
